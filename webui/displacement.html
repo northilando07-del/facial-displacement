@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>大形精修与分层位移 · 88</title>
+<style>
+body{font:16px/1.6 system-ui,sans-serif;max-width:1000px;margin:36px auto;padding:0 20px;color:#203244;background:#f5f7fa}
+h1{margin-bottom:6px}p{color:#526374}section{background:white;padding:24px;border:1px solid #dce3eb;border-radius:14px;margin:20px 0}
+label{display:block;margin:14px 0 6px}input,textarea,select,button{font:inherit;padding:9px 12px;border:1px solid #bbc8d6;border-radius:7px;box-sizing:border-box}input,textarea{width:100%}
+.row{display:flex;gap:10px;align-items:center}.row input{flex:1}.row button{white-space:nowrap}button{cursor:pointer;background:#eaf0f8;color:#203244}button.primary{background:#254f7d;color:white}
+.controls{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}pre{white-space:pre-wrap;overflow:auto;max-height:340px;font:13px/1.6 ui-monospace,monospace}#results img{width:100%;height:auto;border:1px solid #dde5ed}a{color:#254f7d}#error{color:#a52222}
+.workflow{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}.workflow span{padding:10px 14px;background:#e8eff8;border-radius:8px}.workflow strong{color:#254f7d}
+@media(max-width:700px){.controls{grid-template-columns:1fr}.row{flex-wrap:wrap}}
+</style>
+<h1>脸部大形精修与分层位移</h1>
+<p>先结合多光源参考图与五官对应点修正脸型、五官体块，再重新读取剩余误差，逐级深入细节。默认输出 8K 贴图。</p>
+<div class="workflow" aria-label="工作流顺序"><span><strong>16格</strong> · 脸部大形</span><span>→ <strong>4格</strong> · 五官体块</span><span>→ <strong>1格</strong> · 初始网格</span><span>→ <strong id="detail-stage">4级细分</strong> · 局部细节</span><span>→ <strong id="texture-stage">8K</strong> · 贴图</span></div>
+<section>
+<label for="mesh">模型 OBJ</label><div class="row"><input id="mesh"><button data-pick="mesh">选择模型</button></div>
+<label for="references">至少三张同视角、不同光源方向的参考图；每行一个路径，第一张为主参考</label><textarea id="references" rows="4"></textarea><button data-pick="references">选择参考图</button>
+<label for="output">输出目录（位于本工作流目录内）</label><div class="row"><input id="output"><button data-pick="output">选择目录</button></div>
+<div class="controls"><div><label for="levels">1格网格之后的细分级数</label><select id="levels"><option>0</option><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option></select></div>
+<div><label for="bake_resolution">向量位移 / 灰度位移 / 法线</label><select id="bake_resolution"><option value="1024">1K · 1024</option><option value="2048">2K · 2048</option><option value="4096">4K · 4096</option><option value="8192" selected>8K · 8192</option></select></div>
+<div><label for="gain">几何证据强度</label><input id="gain" type="number" min="0" max="4" step="0.1"></div>
+<div><label for="limit">细节位移上限（毫米）</label><input id="limit" type="number" min="0.01" max="10" step="0.1"></div>
+<div><label for="structure_limit">大形位移上限（毫米）</label><input id="structure_limit" type="number" min="0.01" max="20" step="0.1" value="4"></div>
+<div><label for="structure_iterations">每个粗层的精修次数</label><input id="structure_iterations" type="number" min="1" max="10" step="1" value="3"></div></div>
+<p>16格与4格按原始网格面分组，共享连续形变，不合并模型拓扑。粗层允许三维调整，后续细节沿法线叠加。没有明确单位时，毫米按原始脸宽 140 mm 估算。细分受有效参考信号和面数预算限制。</p>
+<div class="row"><button class="primary" id="run">生成模型、贴图并渲染</button><button id="save">保存配置</button><span id="status">读取配置…</span></div><p id="error" role="alert"></p>
+</section>
+<section><h2>运行记录</h2><pre id="log"></pre></section>
+<section id="resultbox" hidden><h2>结果</h2><p><a href="/result/structure/coarse_16.obj">16格大形</a> · <a href="/result/structure/coarse_04.obj">4格精修基础模型</a> · <a href="/result/head_displaced.obj">最终高模 OBJ</a> · <a href="/result/scene/displacement88.blend">Blender 场景</a> · <a href="/result/report.json">运行报告</a> · <a href="/result/vector_displacement_maps.json">向量贴图与解码说明</a></p><p>总向量位移用于原始低模；灰度细节位移用于4格精修后的基础模型。</p><div id="results"></div></section>
+<script>
+let cfg=null,shown='';const $=id=>document.getElementById(id);
+async function api(path,data){const response=await fetch(path,data?{method:'POST',headers:{'Content-Type':'application/json','X-Normal-UI':'1'},body:JSON.stringify(data)}:{});const value=await response.json();if(!response.ok)throw Error(value.error||response.statusText);return value;}
+function collect(){if(!cfg)throw Error('配置尚未加载');cfg.mesh=$('mesh').value.trim();cfg.references=$('references').value.split(/\r?\n/).map(v=>v.trim()).filter(Boolean);cfg.output=$('output').value.trim();cfg.displacement.levels=Number($('levels').value);cfg.bake_resolution=Number($('bake_resolution').value);cfg.texture_resolution=cfg.bake_resolution;cfg.structure={...cfg.structure,enabled:true,cells:[16,4],maximum_displacement_mm:Number($('structure_limit').value),iterations_per_stage:Number($('structure_iterations').value)};cfg.displacement.evidence_gain=Number($('gain').value);cfg.displacement.maximum_displacement_mm=Number($('limit').value);return cfg;}
+function stages(){$('detail-stage').textContent=$('levels').value+'级细分';$('texture-stage').textContent=(Number($('bake_resolution').value)/1024)+'K';}
+$('levels').onchange=stages;$('bake_resolution').onchange=stages;
+async function action(name){try{$('error').textContent='';await api('/api/'+name,collect());shown='';$('status').textContent=name==='run'?'运行中':'已保存';await poll();}catch(e){$('error').textContent=e.message;}}
+$('run').onclick=()=>action('run');$('save').onclick=()=>action('save');
+document.querySelectorAll('[data-pick]').forEach(button=>button.onclick=async()=>{try{const kind=button.dataset.pick;const result=await api('/api/pick',{kind});if(kind==='references'&&result.paths?.length)$(kind).value=result.paths.join('\n');else if(result.path)$(kind).value=result.path;}catch(e){$('error').textContent=e.message;}});
+async function poll(){try{const state=await api('/api/status');$('log').textContent=state.log;const labels={idle:'就绪',running:'运行中',complete:'已完成',failed:'运行失败'};$('status').textContent=labels[state.status]||state.status;$('run').disabled=state.status==='running';$('save').disabled=state.status==='running';if(state.status!=='complete')$('resultbox').hidden=true;if(state.status==='complete'&&shown!==state.output){const results=await api('/api/results');$('results').replaceChildren();for(const item of results){const title=document.createElement('p');title.textContent=item.title;const link=document.createElement('a');link.href='/result/'+item.path;const image=document.createElement('img');image.src=link.href;image.alt=item.title;image.loading='lazy';link.append(image);$('results').append(title,link);}shown=state.output;$('resultbox').hidden=false;}}catch(e){$('error').textContent=e.message;}}
+(async()=>{try{cfg=await api('/api/config');for(const name of ['mesh','output'])$(name).value=cfg[name];$('references').value=cfg.references.join('\n');$('levels').value=cfg.displacement.levels??4;$('bake_resolution').value=cfg.bake_resolution??8192;$('gain').value=cfg.displacement.evidence_gain;$('limit').value=cfg.displacement.maximum_displacement_mm;$('structure_limit').value=cfg.structure?.maximum_displacement_mm??4;$('structure_iterations').value=cfg.structure?.iterations_per_stage??3;stages();await poll();setInterval(poll,1500);}catch(e){$('error').textContent=e.message;}})();
+</script></html>

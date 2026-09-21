@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Local runtime configuration
+displacement.json
+
+# Generated data and local working state
+output/
+cache/
+backup/
+local_notes/
+docs/history/
+*.log
+
+# Generated geometry / binary arrays / Blender scenes
+*.obj
+*.npz
+*.npy
+*.blend
+*.blend1
+
+# Local research source documents
+*.doc
+*.docx
+*.rtf
+*_extracted.txt
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

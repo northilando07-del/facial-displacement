@@ -1,0 +1,176 @@
+{
+  "mesh": "path/to/head.obj",
+  "output": "output/example_run",
+  "cache_directory": "cache/full",
+  "virtual_surface_samples": 2000000,
+  "max_analysis_side": 4096,
+  "texture_resolution": 8192,
+  "continuity": true,
+  "semantic_layers": {
+    "enabled": false,
+    "primary_strong": 0.7,
+    "primary_medium": 0.4,
+    "fallback_gain": 0.2,
+    "max_nodes_per_view": 6000,
+    "policies": {
+      "fold": {
+        "radius_mm": 5,
+        "min_length_mm": 8,
+        "min_width_mm": 1.4,
+        "max_width_mm": 18,
+        "scales_mm": [0.7, 1.4, 2.8],
+        "residual_sigmas_mm": [0.55, 8],
+        "height_sigmas_mm": [0.55, 12],
+        "link_mm": 1.5,
+        "spread_mm": 1.1,
+        "orientation": 0.75,
+        "width_ratio": 0.32
+      },
+      "wrinkle": {
+        "radius_mm": 2,
+        "min_length_mm": 2.5,
+        "min_width_mm": 0.45,
+        "max_width_mm": 3.5,
+        "scales_mm": [0.25, 0.5, 0.9],
+        "residual_sigmas_mm": [0.22, 1.8],
+        "height_sigmas_mm": [0.25, 1.8],
+        "link_mm": 0.9,
+        "spread_mm": 0.5,
+        "orientation": 0.84,
+        "width_ratio": 0.5
+      },
+      "fine": {
+        "radius_mm": 0.65,
+        "min_length_mm": 1.5,
+        "min_width_mm": 0.22,
+        "max_width_mm": 1.3,
+        "scales_mm": [0.12, 0.22, 0.38],
+        "residual_sigmas_mm": [0.1, 0.5],
+        "height_sigmas_mm": [0.12, 0.5],
+        "link_mm": 0.65,
+        "spread_mm": 0.24,
+        "orientation": 0.9,
+        "width_ratio": 0.65
+      }
+    }
+  },
+  "reference_fusion": {
+    "enabled": false,
+    "match_radius_pixels": 5,
+    "blend_sigma_pixels": 3,
+    "confidence_low": 0.35,
+    "confidence_high": 0.75,
+    "primary_max_angle_degrees": 5,
+    "primary_low_fraction": 0.25,
+    "structure_fraction": 0.35,
+    "brightness_bins": 4
+  },
+  "geometry": {
+    "enabled": false,
+    "millimeters_per_unit": null,
+    "assumed_face_width_mm": 140,
+    "sigmas_mm": [0.5, 1.5, 4, 12],
+    "maximum_angle_degrees": 8,
+    "prior": 0.003,
+    "albedo_prior": 0.002,
+    "robust_scale": 0.018,
+    "iterations": 7,
+    "chunk_size": 32768,
+    "min_condition_ratio": 0.015,
+    "registration_tolerance_pixels": 8,
+    "screening_length_mm": 25,
+    "cg_rtol": 0.0002,
+    "cg_maxiter": 1800
+  },
+  "layers": {
+    "skin_sigmas_pixels": [0.8, 3, 18, 64],
+    "lip_sigmas_pixels": [0.65, 2.3, 9, 30],
+    "gains": {
+      "low": 1,
+      "mid": 1.3,
+      "high": 0.6,
+      "lips": 1
+    },
+    "angle_caps_degrees": {
+      "low": 1.5,
+      "mid": 8,
+      "high": 4,
+      "lips": 6
+    },
+    "combined_angle_cap_degrees": 12,
+    "registration_tolerances_pixels": {
+      "low": 14,
+      "mid": 8,
+      "high": 4,
+      "lips": 4
+    },
+    "lip_anchor_fallback": true
+  },
+  "solver": {
+    "maximum_angle_degrees": 12,
+    "prior": 0.003,
+    "albedo_prior": 0.08,
+    "robust_scale": 0.018,
+    "iterations": 7,
+    "chunk_size": 65536,
+    "min_condition_ratio": 0.015
+  },
+  "normal_strength": 1,
+  "protection": {
+    "brow_width_scale": 0.5,
+    "fill_pores": false,
+    "pore_strength": 0.35,
+    "pore_max_angle": 1.2,
+    "donor_distance": 90
+  },
+  "comparison_previews": false,
+  "references": [
+    "path/to/reference_01.png",
+    "path/to/reference_02.png",
+    "path/to/reference_03.png"
+  ],
+  "automatic_inputs": {
+    "detector_python": "path/to/python.exe",
+    "soap_root": "path/to/soap",
+    "torch_home": "cache/torch"
+  },
+  "reuse_full_evidence": "",
+  "displacement": {
+    "levels": 4,
+    "maximum_displacement_mm": 1.5,
+    "step_limits_mm": [1, 0.5, 0.25, 0.125, 0.0625, 0.03125],
+    "screening_length_mm": 20,
+    "minimum_confidence": 0.025,
+    "freeze_parent_vertices": true,
+    "minimum_samples_to_split": 12,
+    "minimum_edge_pixels": 2,
+    "residual_threshold": 0.008,
+    "chain_priority": 0.6,
+    "max_vertices": 1050000,
+    "max_triangles": 2000000,
+    "cg_rtol": 1e-7,
+    "cg_maxiter": 2500,
+    "millimeters_per_unit": null,
+    "assumed_face_width_mm": 140,
+    "evidence_gain": 1
+  },
+  "blender": "path/to/blender.exe",
+  "bake_resolution": 8192,
+  "render_size": 1000,
+  "render_samples": 32,
+  "structure": {
+    "enabled": true,
+    "cells": [16, 4],
+    "iterations_per_stage": 3,
+    "maximum_displacement_mm": 4,
+    "step_limits_mm": [3, 1.5],
+    "normal_angle_degrees": 25,
+    "landmark_weight": 4,
+    "contour_weight": 2,
+    "smoothness": 1,
+    "screening_length_mm": 60,
+    "analysis_max_side": 1024,
+    "minimum_confidence": 0.025,
+    "cg_maxiter": 2000
+  }
+}
